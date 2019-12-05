@@ -1,0 +1,89 @@
+library(rvest)
+library(XML)
+library(dplyr)
+library(zoo)
+library(car)
+
+popular.dog.breeds.2018 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2018-full-list/")
+
+popular.dog.breed.2018 <- html_nodes(popular.dog.breeds.2018, xpath = "//table")
+
+popular_dog_breeds.2018 <- as.data.frame(html_table(popular.dog.breed.2018,fill = TRUE,header = TRUE))
+
+
+popular.dog.breeds.2017 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2017-full-list/")
+
+popular.dog.breed.2017 <- html_nodes(popular.dog.breeds.2017, xpath = "//table")
+
+popular_dog_breeds.2017 <- as.data.frame(html_table(popular.dog.breed.2017,fill = TRUE,header = TRUE))
+
+
+popular.dog.breeds.2016 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2016-full-list/")
+
+popular.dog.breed.2016 <- html_nodes(popular.dog.breeds.2016, xpath = "//table")
+
+popular_dog_breeds.2016 <- as.data.frame(html_table(popular.dog.breed.2016,fill = TRUE,header = TRUE))
+
+
+popular.dog.breeds.2015 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2015-full-list/")
+
+popular.dog.breed.2015 <- html_nodes(popular.dog.breeds.2015, xpath = "//table")
+
+popular_dog_breeds.2015 <- as.data.frame(html_table(popular.dog.breed.2015,fill = TRUE,header = TRUE))
+
+
+popular.dog.breeds.2014 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2014-full-list/")
+
+popular.dog.breed.2014 <- html_nodes(popular.dog.breeds.2014, xpath = "//table")
+
+popular_dog_breeds.2014 <- as.data.frame(html_table(popular.dog.breed.2014,fill = TRUE,header = TRUE))
+
+
+popular.dog.breeds.2013 <- read_html(
+  "https://www.akc.org/most-popular-breeds/2013-full-list/")
+
+popular.dog.breed.2013 <- html_nodes(popular.dog.breeds.2013, xpath = "//table")
+
+popular_dog_breeds.2013 <- as.data.frame(html_table(popular.dog.breed.2013,fill = TRUE,header = TRUE))
+
+Popular.dog.breeds.2013.2014 <- merge(popular_dog_breeds.2013,popular_dog_breeds.2014,by = 'Breed')
+Popular.dog.breeds.2013.2014.2015 <- merge(Popular.dog.breeds.2013.2014,popular_dog_breeds.2015,by = 'Breed')
+Popular.dog.breeds.2013.2014.2015.2016 <- merge(Popular.dog.breeds.2013.2014.2015,popular_dog_breeds.2016,by = 'Breed')
+Popular.dog.breeds.2013.2014.2015.2016.2017 <- merge(Popular.dog.breeds.2013.2014.2015.2016,popular_dog_breeds.2017,by = 'Breed')
+Popular.dog.breeds.2013.2014.2015.2016.2017.2018 <- merge(Popular.dog.breeds.2013.2014.2015.2016.2017,popular_dog_breeds.2018,by = 'Breed')
+Names.of.col <- c('Breed','Y2013','Y2014','Y2015','Y2016','Y2017','Y2018')
+colnames(Popular.dog.breeds.2013.2014.2015.2016.2017.2018) <- Names.of.col
+View(Popular.dog.breeds.2013.2014.2015.2016.2017.2018)
+
+#Can I use past data to predict a breeds popularity in the future?
+Popularity.Dog.Breeds <- lm(Y2018 ~ Y2017+Y2016+Y2015+Y2014+Y2013,data = Popular.dog.breeds.2013.2014.2015.2016.2017.2018)
+summary(Popularity.Dog.Breeds)
+#low p-value indicates a good model, years 2015 & 2014 should be dropped
+vif(Popularity.Dog.Breeds)
+#all very high therefore a poor model
+#model selection
+Popular.dog.breeds.2013.2014.2015.2016.2017.2018. <- Popular.dog.breeds.2013.2014.2015.2016.2017.2018[,2:7]
+
+
+null.model = lm(Y2018 ~ 1, data = Popular.dog.breeds.2013.2014.2015.2016.2017.2018.)
+full.model = lm(Y2018 ~ ., data = Popular.dog.breeds.2013.2014.2015.2016.2017.2018.)
+
+step.forward <- step(null.model,
+                     scope = list(lower = null.model, upper = full.model),
+                     direction = "forward")
+summary(step.forward)
+#The year 2014 was dropped and the p-value reflects that this is a good model.
+vif(step.forward)
+# but it is still a poor model due to multicolliniarity
+cor(Popular.dog.breeds.2013.2014.2015.2016.2017.2018.)
+#Conclusion 
+# The popularity of dogs does not change much and therefore the yearly results are highly correlated which means that the model is poor and should not be used.
+#So lets try a model using only the previous years data to predict the current years data.
+Y2017_predict_2018 <- lm(Y2018 ~ Y2017,data = Popular.dog.breeds.2013.2014.2015.2016.2017.2018.)
+summary(Y2017_predict_2018)
+#Therefore the previous years breed ranking is a significant predictor of the current years ranking.
